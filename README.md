@@ -47,6 +47,8 @@ It should look like this:
 
 ## Usage
 
+### THIS IS STILL ONLY MEANT FOR IMAGES WITH THE SAME HEIGHT AND WIDTH!!!!
+
 ### General
 
 fruity can only be used in the Command Prompt. Type in `fruity help` for a help list (no shit)
