@@ -1,5 +1,6 @@
 
 ![fruity logo upsc](https://github.com/user-attachments/assets/228d5786-0794-408b-8a0f-38a7088ea666)
+Artwork by Jace
 
 
 # fruity
