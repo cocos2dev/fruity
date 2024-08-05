@@ -41,6 +41,10 @@ Add the Path in your Systemvariable called `PATH`
 
 Open Command Prompt and type `fruity` to see if it worked.
 
+It should look like this:
+![image](https://github.com/user-attachments/assets/d3d971b3-31de-4f63-b6fb-9fb9c4c61e6e)
+
+
 ## Usage
 
 ### General
@@ -67,6 +71,10 @@ Heres a Example on how to play your Animation:
 
 This command will search for a directory called `animationName` and checks for a `PROP.txt`
 It will then read the `pbDelay` value inside `PROP.txt` and will use that Value to play your animation on a SDL2 Window.
+
+It should look like this (Example Animation):
+![image](https://github.com/user-attachments/assets/36a0c4d2-0af6-4d42-b049-15f80f75f84b)
+
 
 ### Converting your Animation to a Spritesheet
 
