@@ -1,5 +1,6 @@
 
-![fruity logo](https://github.com/user-attachments/assets/4fecfe86-28c8-400e-8341-b407187a7efa)
+![fruity logo upsc](https://github.com/user-attachments/assets/228d5786-0794-408b-8a0f-38a7088ea666)
+
 
 # fruity
 
