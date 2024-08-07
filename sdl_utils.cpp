@@ -21,8 +21,7 @@ void SetWindowStyles(SDL_Window* window) {
     SDL_SysWMinfo info;
     SDL_VERSION(&info.version);
 
-
-    // removing minimize and maximze buttons
+    // removing minimize and maximize buttons
     if (SDL_GetWindowWMInfo(window, &info)) {
         HWND hwnd = info.info.win.window;
         LONG style = GetWindowLong(hwnd, GWL_STYLE);
@@ -41,7 +40,7 @@ int displayAnimation(const std::string& name, int msDelay, int winSize, int onTo
             files.push_back(entry.path().string());
         }
     }
-    
+
     if (files.size() < 2) {
         std::cerr << "You need at least 2 animation sprites!" << std::endl;
         return 1;
@@ -61,10 +60,10 @@ int displayAnimation(const std::string& name, int msDelay, int winSize, int onTo
         return 1;
     }
 
-    
     SetWindowStyles(window);
-    if(onTop == 1) { SDL_SetWindowAlwaysOnTop(window, SDL_TRUE); }
-    
+    if (onTop == 1) {
+        SDL_SetWindowAlwaysOnTop(window, SDL_TRUE);
+    }
 
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!renderer) {
@@ -74,8 +73,24 @@ int displayAnimation(const std::string& name, int msDelay, int winSize, int onTo
         return 1;
     }
 
-    SDL_SetRenderDrawColor(renderer, 50, 64, 74, 5);  
-    
+    SDL_SetRenderDrawColor(renderer, 50, 64, 74, 255);
+
+    // calculate the maximum aspect ratio
+    float maxAspectRatio = 0.0f;
+    for (const auto& file : files) {
+        SDL_Surface* image = IMG_Load(file.c_str());
+        if (!image) {
+            std::cerr << "IMG_Load Error: " << IMG_GetError() << std::endl;
+            continue;
+        }
+
+        float aspectRatio = static_cast<float>(image->w) / static_cast<float>(image->h);
+        if (aspectRatio > maxAspectRatio) {
+            maxAspectRatio = aspectRatio;
+        }
+
+        SDL_FreeSurface(image);
+    }
 
     bool running = true;
     while (running) {
@@ -94,8 +109,27 @@ int displayAnimation(const std::string& name, int msDelay, int winSize, int onTo
                 continue;
             }
 
+            int imgWidth, imgHeight;
+            SDL_QueryTexture(texture, NULL, NULL, &imgWidth, &imgHeight);
+
+            int x = 0, y = 0;
+            int w = winSize, h = winSize;
+
+            // adjust width and height based on the maximum aspect ratio
+            float imgAspectRatio = static_cast<float>(imgWidth) / static_cast<float>(imgHeight);
+
+            if (imgAspectRatio > maxAspectRatio) {
+                h = static_cast<int>(winSize / imgAspectRatio);
+                y = (winSize - h) / 2;
+            } else {
+                w = static_cast<int>(winSize * imgAspectRatio);
+                x = (winSize - w) / 2;
+            }
+
+            SDL_Rect dstRect = { x, y, w, h };
+
             SDL_RenderClear(renderer);
-            SDL_RenderCopy(renderer, texture, NULL, NULL);
+            SDL_RenderCopy(renderer, texture, NULL, &dstRect);
             SDL_RenderPresent(renderer);
 
             SDL_DestroyTexture(texture);

@@ -10,8 +10,6 @@
 #include <string>
 #include <algorithm>
 #include <fstream>
-#include <stb_image.h>
-#include <stb_image_write.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -44,11 +42,11 @@ int exportSheet(const std::string& name) {
 
     std::sort(files.begin(), files.end());
 
-    int spriteWidth = 0;
-    int spriteHeight = 0;
+    int maxWidth = 0;
+    int totalHeight = 0;
     std::vector<uint8_t> allImages;
 
-    // load all images and calculate size or smth
+    // Calculate max aspect ratio and load images
     for (const auto& file : files) {
         int width, height, channels;
         uint8_t* imageData = stbi_load(file.c_str(), &width, &height, &channels, 4);
@@ -57,40 +55,40 @@ int exportSheet(const std::string& name) {
             return 1;
         }
 
-        spriteWidth = std::max(spriteWidth, width);
-        spriteHeight += height;
+        maxWidth = std::max(maxWidth, width);
+        totalHeight += height;
         allImages.insert(allImages.end(), imageData, imageData + width * height * 4);
         stbi_image_free(imageData);
 
-        sprites.push_back({0, spriteHeight - height, width, height, fs::path(file).stem().string()});
+        sprites.push_back({0, totalHeight - height, width, height, fs::path(file).stem().string()});
     }
 
-    // create spritesheet image
-    std::vector<uint8_t> spritesheet(spriteWidth * spriteHeight * 4, 0);
+    // Create spritesheet image
+    std::vector<uint8_t> spritesheet(maxWidth * totalHeight * 4, 0);
     int yOffset = 0;
     for (const auto& sprite : sprites) {
         for (int y = 0; y < sprite.height; ++y) {
             for (int x = 0; x < sprite.width; ++x) {
-                int srcIndex = (y * sprite.width + x) * 4;
-                int destIndex = ((y + yOffset) * spriteWidth + x) * 4;
-                spritesheet[destIndex] = allImages[srcIndex];
-                spritesheet[destIndex + 1] = allImages[srcIndex + 1];
-                spritesheet[destIndex + 2] = allImages[srcIndex + 2];
-                spritesheet[destIndex + 3] = allImages[srcIndex + 3];
+                int srcIndex = ((yOffset + y) * maxWidth + x) * 4;
+                int destIndex = (y * sprite.width + x) * 4;
+                spritesheet[srcIndex] = allImages[destIndex];
+                spritesheet[srcIndex + 1] = allImages[destIndex + 1];
+                spritesheet[srcIndex + 2] = allImages[destIndex + 2];
+                spritesheet[srcIndex + 3] = allImages[destIndex + 3];
             }
         }
         yOffset += sprite.height;
     }
 
-    // making it a png
-    std::string sheetPath = "./"+ name + "Sheet.png";
-    if (!stbi_write_png(sheetPath.c_str(), spriteWidth, spriteHeight, 4, spritesheet.data(), spriteWidth * 4)) {
+    // Save spritesheet image
+    std::string sheetPath = "./" + name + "Sheet.png";
+    if (!stbi_write_png(sheetPath.c_str(), maxWidth, totalHeight, 4, spritesheet.data(), maxWidth * 4)) {
         std::cerr << "Failed to write spritesheet image." << std::endl;
         return 1;
     }
 
-    // plist file
-    std::string plistPath = "./"+ name + "Sheet.plist";
+    // Save plist file
+    std::string plistPath = "./" + name + "Sheet.plist";
     std::ofstream plistFile(plistPath);
     if (!plistFile.is_open()) {
         std::cerr << "Failed to create plist file." << std::endl;
@@ -125,7 +123,7 @@ int exportSheet(const std::string& name) {
     plistFile << "    <key>format</key>\n";
     plistFile << "    <integer>2</integer>\n";
     plistFile << "    <key>size</key>\n";
-    plistFile << "    <string>{" << spriteWidth << "," << spriteHeight << "}</string>\n";
+    plistFile << "    <string>{" << maxWidth << "," << totalHeight << "}</string>\n";
     plistFile << "  </dict>\n";
     plistFile << "</dict>\n";
     plistFile << "</plist>\n";

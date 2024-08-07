@@ -15,7 +15,6 @@
 
 using namespace std;
 
-
 // here are the config.txt values stored
 struct {
     string version;
@@ -58,14 +57,12 @@ bool isNumber(const string& str) {
 }
 
 // creating animation directory and prop file
-int createAnim(const string& name, int px, int delay) {
+int createAnim(const string& name, int delay) {
     if (filesystem::exists("./" + name)) {
         print("ERROR: Duplication found!");
         return 0;
     }
     print("Animation Name: " + name);
-    string pix = to_string(px);
-    print("Sprite Size: " + pix + " (" + pix + "x" + pix + ")");
     print("Creating new Animation...");
     try {
         filesystem::create_directory("./" + name); // yay create dir
@@ -100,7 +97,6 @@ int playAnim(const string& name, int msDelay = 250) {
     return displayAnimation(name, msDelay, fConfig.wSize, fConfig.aOnTop); // sdl_utils.cpp will display the animation
 }
 
-
 // shit
 void OpenFileWithEditor(const std::string& path) {
     std::string command = "start \"\" \"" + path + "\"";
@@ -120,7 +116,6 @@ std::string getExecutableDirectory() {
     return execPath.substr(0, execPath.find_last_of("\\/"));
 }
 
-
 // heres all the command handling and stuff
 int main(int argc, char* argv[]) {
     // change cmd title with windows api
@@ -130,7 +125,7 @@ int main(int argc, char* argv[]) {
     std::string execDir = getExecutableDirectory();
     std::string configPath = execDir + "/config.txt";
 
-    fConfig.version = "public-1.0";
+    fConfig.version = "public-1.1";
 
     // get Values from Config File
     if (filesystem::exists(configPath)) {
@@ -139,7 +134,7 @@ int main(int argc, char* argv[]) {
         if(getline(confi, line)) {
             fConfig.wSize = extractValue(line, "windowSize=");
             if(getline(confi, line)) {
-                fConfig.aOnTop = extractValue(line, "windowFocus=");
+                fConfig.aOnTop = extractValue(line, "windowFocus=") == 1;
             }
         }
         confi.close();
@@ -170,12 +165,11 @@ int main(int argc, char* argv[]) {
     string command = string(argv[1]);
 
     if (command == "create") {
-        if (argc == 4) {
+        if (argc == 4) {  // Erwartet 3 Argumente plus das Programmname
             string animName = string(argv[2]);
-            int pixels = stoi(argv[3]);
-            int delay = stoi(argv[4]);
+            int delay = stoi(argv[3]);
             command = "";
-            createAnim(animName, pixels, delay);
+            createAnim(animName, delay);
             return 1;
         } else {
             print("Invalid or incomplete syntax");
@@ -192,8 +186,8 @@ int main(int argc, char* argv[]) {
             int spee;
             string line;
             if (file.is_open()) {
-                for (int i = 0; i < 3 && getline(file, line); ++i) {
-                    // Skip to the third line
+                for (int i = 0; i < 2 && getline(file, line); ++i) {
+                    // skip to second line to read pbDelay=
                 }
                 if (file) {
                     command = "";
@@ -266,7 +260,7 @@ int main(int argc, char* argv[]) {
         command = "";
         print("Fruity Help list");
         print(" ");
-        print("fruity create <name> <playbackDelay>(In MS)");
+        print("fruity create <name> <playbackDelay>(In MS)");  // corrected syntax here
         print("Creates a new Animation");
         print(" ");
         print("fruity play <name>");
@@ -290,44 +284,49 @@ int main(int argc, char* argv[]) {
         print("Opening config");
         return 0;
     } else if(command == "sheet") {
-        string name = string(argv[2]);
-        print("Searching for animation '" + name + "'...");
-        if(filesystem::exists("./" + name)) {
-            print("Found animation folder!");
-            if(filesystem::exists("./" + name + "/PROP.txt")) {
-                print("Found prop file!");
-                ifstream file("./" + name + "/PROP.txt");
-                string line;
-                bool validProp = false;
+        if (argc == 3) {  // ensure the correct number of arguments
+            string name = string(argv[2]);
+            print("Searching for animation '" + name + "'...");
+            if(filesystem::exists("./" + name)) {
+                print("Found animation folder!");
+                if(filesystem::exists("./" + name + "/PROP.txt")) {
+                    print("Found prop file!");
+                    ifstream file("./" + name + "/PROP.txt");
+                    string line;
+                    bool validProp = false;
 
-                while (getline(file, line)) {
-                    if (line.find("name=") == 0) {
-                        string propName = line.substr(5); // get name value from "name="
-                        if (propName == name) {
-                            validProp = true;
-                            break;
+                    while (getline(file, line)) {
+                        if (line.find("name=") == 0) {
+                            string propName = line.substr(5); // get name value from "name="
+                            if (propName == name) {
+                                validProp = true;
+                                break;
+                            }
+                        } else {
+                            print("Invalid prop file! Try 'fruity refresh " + name + "'!");
+                            return 0;
                         }
-                    } else {
-                        print("Invalid prop file! Try 'fruity refresh " + name + "'!");
-                        return 0;
                     }
-                }
-                if(validProp) {
-                    print("Checked Prop file: Succes!");
-                    print("Creating sheet and plist...");
-                    exportSheet(string(name));
-                    print("Finished!");
-                    return 1;
+                    if(validProp) {
+                        print("Checked Prop file: Succes!");
+                        print("Creating sheet and plist...");
+                        exportSheet(string(name));
+                        print("Finished!");
+                        return 1;
+                    } else {
+                        print("Invalid prop file!");
+                        return -1;
+                    }
                 } else {
-                    print("Invalid prop file!");
-                    return -1;
+                    print("No animation prop file found.");
+                    return 0;
                 }
             } else {
-                print("No animation prop file found.");
+                print("No animation folder found.");
                 return 0;
             }
         } else {
-            print("No animation folder found.");
+            print("Invalid or incomplete syntax");
             return 0;
         }
     }
